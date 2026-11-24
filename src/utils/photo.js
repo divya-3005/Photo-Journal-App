@@ -1,27 +1,34 @@
 import * as ImagePicker from 'expo-image-picker';
-import { Alert, Linking } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
 
 // Ask for camera or gallery permission. Returns true if allowed.
 async function askPermission(type) {
-  const result =
-    type === 'camera'
-      ? await ImagePicker.requestCameraPermissionsAsync()
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+  // Web does not require native permission dialogs
+  if (Platform.OS === 'web') return true;
 
-  if (result.granted) return true;
+  try {
+    const result =
+      type === 'camera'
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-  if (!result.canAskAgain) {
-    // User blocked it permanently -> only Settings can fix it
-    Alert.alert(
-      'Permission blocked',
-      `Please allow ${type === 'camera' ? 'camera' : 'photo'} access in Settings.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Open Settings', onPress: () => Linking.openSettings() },
-      ]
-    );
-  } else {
-    Alert.alert('Permission needed', 'We need permission to add a photo.');
+    if (result.granted) return true;
+
+    if (!result.canAskAgain) {
+      // User blocked it permanently -> only Settings can fix it
+      Alert.alert(
+        'Permission blocked',
+        `Please allow ${type === 'camera' ? 'camera' : 'photo'} access in Settings.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => Linking.openSettings() },
+        ]
+      );
+    } else {
+      Alert.alert('Permission needed', 'We need permission to add a photo.');
+    }
+  } catch (e) {
+    console.warn('Permission request error:', e);
   }
   return false;
 }
